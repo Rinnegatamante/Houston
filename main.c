@@ -10,6 +10,7 @@
 #include <fcntl.h>
 
 #define u32 uint32_t
+#define BUFFER_SIZE 10485760
 
 typedef struct
 {
@@ -22,19 +23,25 @@ int setSockNoBlock(u32 s, u32 val)
 	return setsockopt(s, SOL_SOCKET, 0x1009, (const char*)&val, sizeof(u32));
 }
 
-int sendData(int socket, int sendsize, char *buffer) {
-   while(sendsize) {
-      int len = send(socket, buffer, sendsize, 0);
-      if (len <= 0) break;
-      sendsize -= len;
-      buffer += len;
-   }
-   return sendsize <= 0;
+int sendData(int socket, int sendsize, FILE* handle) {
+	char* buffer = malloc(BUFFER_SIZE);
+	int oldpos = sendsize;
+	while(sendsize) {
+		fseek(handle, oldpos - sendsize, SEEK_SET);
+		fread(buffer, BUFFER_SIZE, 1, handle);
+		int len = 0;
+		if (BUFFER_SIZE <= sendsize) len = send(socket, buffer, BUFFER_SIZE, 0);
+		else len = send(socket, buffer, sendsize, 0);
+		if (len <= 0) break;
+		sendsize -= len;
+	}
+	free(buffer);
+	return sendsize <= 0;
 }
 
 int main(int argc,char** argv){
 
-	// Getting IP
+	// Getting arguments
 	char* host = (char*)(argv[1]);
 	char* cia_file = (char*)(argv[2]);
 	
@@ -81,7 +88,7 @@ int main(int argc,char** argv){
 	fflush(stdout);
 	
 	// Transfering CIA file
-	printf("\nOpening %s ...",cia_file);
+	printf("\nOpening %s ... ",cia_file);
 	FILE* input = fopen(cia_file,"r");
 	if (input < 0){
 		printf("\nFile not found.");
@@ -91,28 +98,24 @@ int main(int argc,char** argv){
 	fseek(input, 0, SEEK_END);
 	int size = ftell(input);
 	fseek(input, 0, SEEK_SET);
-	printf("Done! (%i KBs)",(size/1024));
-	char* buffer = (char*)malloc(size);
-	fread(buffer, size, 1, input);
-	fclose(input);
-	printf("\nSending filesize...");
+	printf("Done! (%i KBs)\nSending filesize... ",(size/1024));
 	fflush(stdout);
 	send(my_socket->sock, &size, 4, 0);
 	count = recv(my_socket->sock, &data, 8, 0);
 	while (count < 0){
 		count = recv(my_socket->sock, &data, 8, 0);
 	}
-	printf("\nSending file...");
+	printf("Done!\nSending file... ");
 	fflush(stdout);
-	sendData(my_socket->sock, size, buffer);
+	sendData(my_socket->sock, size, input);
 	count = recv(my_socket->sock, &data, 8, 0);
 	while (count < 0){
 		count = recv(my_socket->sock, &data, 8, 0);
 	}
-	printf("\nFile successfully sent!");
+	printf("Done!\nFile successfully sent!\n\nSee you Space Cowboy...");
 	fflush(stdout);
+	fclose(input);
 	close(my_socket->sock);
-	free(buffer);
 	return 1;
 	
 }
