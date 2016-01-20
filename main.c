@@ -61,7 +61,7 @@ int main(int argc,char** argv){
 	fflush(stdout);
 	
 	 // Set non-blocking 
-	setSockNoBlock(my_socket.sock, 1);
+	// setSockNoBlock(my_socket.sock, 1);
 	
 	// Connecting to NASA
 	int err = connect(my_socket.sock, (struct sockaddr*)&my_socket.addrTo, sizeof(my_socket.addrTo));
