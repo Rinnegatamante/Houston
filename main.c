@@ -17,11 +17,6 @@ typedef struct
 	struct sockaddr_in addrTo;
 } Socket;
 
-int setSockNoBlock(int s, int val)
-{
-	return setsockopt(s, SOL_SOCKET, 0x1009, (const char*)&val, sizeof(int));
-}
-
 int sendData(int socket, int sendsize, FILE* handle) {
 	char* buffer = malloc(BUFFER_SIZE);
 	int oldpos = sendsize;
@@ -41,6 +36,10 @@ int sendData(int socket, int sendsize, FILE* handle) {
 int main(int argc,char** argv){
 
 	// Getting arguments
+	if (argc != 3){
+		printf("Invalid syntax!\n\nUsage: houston 3DS_IP CIA_FILENAME");
+		return -1;
+	}
 	char* host = (char*)(argv[1]);
 	char* cia_file = (char*)(argv[2]);
 	
@@ -59,9 +58,6 @@ int main(int argc,char** argv){
 		return -1;
 	}else printf("\nClient socket created on port 5000");
 	fflush(stdout);
-	
-	 // Set non-blocking 
-	// setSockNoBlock(my_socket.sock, 1);
 	
 	// Connecting to NASA
 	int err = connect(my_socket.sock, (struct sockaddr*)&my_socket.addrTo, sizeof(my_socket.addrTo));
@@ -115,6 +111,6 @@ int main(int argc,char** argv){
 	fflush(stdout);
 	fclose(input);
 	close(my_socket.sock);
-	return 1;
+	return 0;
 	
 }
