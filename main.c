@@ -49,7 +49,7 @@ int main(int argc,char** argv){
 	
 	// Creating client socket
 	Socket my_socket;
-	memset(&my_socket.addrTo, '0', sizeof(my_socket.addrTo)); 
+	memset(&my_socket.addrTo, 0, sizeof(my_socket.addrTo));
 	my_socket.addrTo.sin_family = AF_INET;
 	my_socket.addrTo.sin_port = htons(5000);
 	my_socket.addrTo.sin_addr.s_addr = inet_addr(host);
