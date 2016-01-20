@@ -9,18 +9,17 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 
-#define u32 uint32_t
 #define BUFFER_SIZE 10485760
 
 typedef struct
 {
-	u32 sock;
+	int sock;
 	struct sockaddr_in addrTo;
 } Socket;
 
-int setSockNoBlock(u32 s, u32 val)
+int setSockNoBlock(int s, int val)
 {
-	return setsockopt(s, SOL_SOCKET, 0x1009, (const char*)&val, sizeof(u32));
+	return setsockopt(s, SOL_SOCKET, 0x1009, (const char*)&val, sizeof(int));
 }
 
 int sendData(int socket, int sendsize, FILE* handle) {
