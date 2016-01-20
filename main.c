@@ -9,18 +9,17 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 
-#define u32 uint32_t
 #define BUFFER_SIZE 10485760
 
 typedef struct
 {
-	u32 sock;
+	int sock;
 	struct sockaddr_in addrTo;
 } Socket;
 
-int setSockNoBlock(u32 s, u32 val)
+int setSockNoBlock(int s, int val)
 {
-	return setsockopt(s, SOL_SOCKET, 0x1009, (const char*)&val, sizeof(u32));
+	return setsockopt(s, SOL_SOCKET, 0x1009, (const char*)&val, sizeof(int));
 }
 
 int sendData(int socket, int sendsize, FILE* handle) {
@@ -49,40 +48,40 @@ int main(int argc,char** argv){
 	printf("Houston v.1.0\n");
 	
 	// Creating client socket
-	Socket* my_socket = (Socket*) malloc(sizeof(Socket));
-	memset(&my_socket->addrTo, '0', sizeof(my_socket->addrTo)); 
-	my_socket->addrTo.sin_family = AF_INET;
-	my_socket->addrTo.sin_port = htons(5000);
-	my_socket->addrTo.sin_addr.s_addr = inet_addr(host);
-	my_socket->sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (my_socket->sock < 0){
+	Socket my_socket;
+	memset(&my_socket.addrTo, 0, sizeof(my_socket.addrTo));
+	my_socket.addrTo.sin_family = AF_INET;
+	my_socket.addrTo.sin_port = htons(5000);
+	my_socket.addrTo.sin_addr.s_addr = inet_addr(host);
+	my_socket.sock = socket(AF_INET, SOCK_STREAM, 0);
+	if (my_socket.sock < 0){
 		printf("\nFailed creating socket.");	
 		return -1;
 	}else printf("\nClient socket created on port 5000");
 	fflush(stdout);
 	
 	 // Set non-blocking 
-	setSockNoBlock(my_socket->sock, 1);
+	// setSockNoBlock(my_socket.sock, 1);
 	
 	// Connecting to NASA
-	int err = connect(my_socket->sock, (struct sockaddr*)&my_socket->addrTo, sizeof(my_socket->addrTo));
+	int err = connect(my_socket.sock, (struct sockaddr*)&my_socket.addrTo, sizeof(my_socket.addrTo));
 	if (err < 0 ){ 
 		printf("\nFailed connecting server.");
-		close(my_socket->sock);
+		close(my_socket.sock);
 		return -1;
 	}else printf("\nConnection estabilished, waiting for NASA response...");
 	fflush(stdout);
 	
 	// Waiting for magic
 	char data[25];
-	int count = recv(my_socket->sock, &data, 25, 0);
+	int count = recv(my_socket.sock, &data, 25, 0);
 	while (count < 0){
-		int count = recv(my_socket->sock, &data, 25, 0);
+		int count = recv(my_socket.sock, &data, 25, 0);
 	}
 	if (strncmp(data,"HOUSTON, WE GOT A PROBLEM",25) == 0) printf("\nMagic received, starting transfer...");
 	else{
 		printf("\nWrong magic received, connection aborted.");
-		close(my_socket->sock);
+		close(my_socket.sock);
 		return -1;
 	}
 	fflush(stdout);
@@ -92,7 +91,7 @@ int main(int argc,char** argv){
 	FILE* input = fopen(cia_file,"r");
 	if (input < 0){
 		printf("\nFile not found.");
-		close(my_socket->sock);
+		close(my_socket.sock);
 		return -1;
 	}
 	fseek(input, 0, SEEK_END);
@@ -100,22 +99,22 @@ int main(int argc,char** argv){
 	fseek(input, 0, SEEK_SET);
 	printf("Done! (%i KBs)\nSending filesize... ",(size/1024));
 	fflush(stdout);
-	send(my_socket->sock, &size, 4, 0);
-	count = recv(my_socket->sock, &data, 8, 0);
+	send(my_socket.sock, &size, 4, 0);
+	count = recv(my_socket.sock, &data, 8, 0);
 	while (count < 0){
-		count = recv(my_socket->sock, &data, 8, 0);
+		count = recv(my_socket.sock, &data, 8, 0);
 	}
 	printf("Done!\nSending file... ");
 	fflush(stdout);
-	sendData(my_socket->sock, size, input);
-	count = recv(my_socket->sock, &data, 8, 0);
+	sendData(my_socket.sock, size, input);
+	count = recv(my_socket.sock, &data, 8, 0);
 	while (count < 0){
-		count = recv(my_socket->sock, &data, 8, 0);
+		count = recv(my_socket.sock, &data, 8, 0);
 	}
 	printf("Done!\nFile successfully sent!\n\nSee you Space Cowboy...");
 	fflush(stdout);
 	fclose(input);
-	close(my_socket->sock);
+	close(my_socket.sock);
 	return 1;
 	
 }
