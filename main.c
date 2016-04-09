@@ -48,9 +48,10 @@ int sendData(int socket, int sendsize, FILE* handle, int cmd_socket) {
 	return 0;
 }
 
-char* waitResponse(int socket){
+char ret_code[4];
+
+void waitResponse(int socket){
 	char data[32768];
-	char ret_code[4];
 	int data_ptr = 0;
 	int count = -1;
 	while (count < 0){
@@ -67,7 +68,6 @@ char* waitResponse(int socket){
 	fflush(stdout);
 	snprintf(ret_code,4,data);
 	memset(data, 0, 32768);
-	return ret_code;
 }
 
 int main(int argc,char** argv){
@@ -174,11 +174,10 @@ int main(int argc,char** argv){
 	}
 	
 	// Finishing file transfer
-	char* data = waitResponse(my_socket.sock);
+	waitResponse(my_socket.sock);
 	
 	// If NASA closed transfer, we need to reset STOR status
-	if (strncmp(data,"426",3) == 0){
-		memset(data, 0, 32768);
+	if (strncmp(ret_code,"426",3) == 0){
 		sprintf(cmd,"STOR %s",cia_file);
 		send(my_socket.sock, cmd, strlen(cmd), 0);
 		waitResponse(my_socket.sock);
@@ -186,6 +185,7 @@ int main(int argc,char** argv){
 	
 	// Closing connection
 	close(my_socket.sock);
+	printf("\n"); // Needed for the shitty Mac shell :/
 	return 0;
 	
 }
